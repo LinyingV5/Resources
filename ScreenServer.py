@@ -43,10 +43,9 @@ class ScreenServer():
         self.num_words = num_words
         self.move_speed = move_speed
         
-        self.ft = tkFont.Font(family='Helvetica', weight=tkFont.BOLD) #使用的字体
         self.text_list = linecache.getlines('words.txt') #获取文件中的单词
         
-        self.wait_time = 0 #单词停止移动的世界
+        self.wait_time = 0 #单词停止移动的时间
         self.waited = False #等待标记
         self.recreate = False #重建标记
 
@@ -73,11 +72,12 @@ class ScreenServer():
     
     #绘制单词
     def create_words(self):
+        ft = tkFont.Font(self.canvas_window, family='times', size=24, weight=tkFont.BOLD) #使用的字体
         for i in range(self.num_words):
-            word_text = self.text_list[random.randint(1, 2090)]
+            word_text = self.text_list[random.randint(1, 2089)]
             x_pos = self.width
-            y_pos = self.height - self.height / self.num_words * i - 80
-            word = EnglishWord(self.canvas, self.ft, word_text, self.width, x_pos, y_pos, self.move_speed)
+            y_pos = self.height / self.num_words * i + 50
+            word = EnglishWord(self.canvas, ft, word_text, self.width, x_pos, y_pos, self.move_speed)
             word.create()
             self.words.append(word)
         
@@ -86,9 +86,10 @@ class ScreenServer():
         for i in range(self.num_words):
             if(time.time() - self.wait_time > 5):
                 self.words[i].move()
-            if self.words[i].get_x() < self.width / 2 and not self.waited: 
-                self.waited = True
-                self.wait_time = time.time()
+            if self.words[i].get_x() < self.width / 2 and not self.waited:
+                if i == self.num_words - 1:
+                    self.waited = True
+                    self.wait_time = time.time()
             if self.words[i].get_x() < 0:
                 self.words[i].remove()
                 if i == self.num_words - 1:
@@ -100,11 +101,11 @@ class ScreenServer():
             self.recreate = False
             self.waited = False
         
-        self.balls_drawing = self.canvas.after(30,self.run_screen_saver) 
+        self.words_drawing = self.canvas.after(30,self.run_screen_saver) 
         
     #监听输入
     def input_listener(self, event):
-        self.canvas.after_cancel(self.balls_drawing)
+        self.canvas.after_cancel(self.words_drawing)
         self.canvas_window.destroy()
 
 #时间管理类        
@@ -114,8 +115,6 @@ class TimeManager():
         self.wait_time = setting_manager.get_wait_time()
         self.server_on = setting_manager.get_server_state()
         self.time_record = time.time()
-        self.run_flag = False
-        self.listener = mouse.Listener()
 
     def time_manager_start(self):
         while True:
@@ -163,11 +162,11 @@ class SettingManager():
         self.setting_window.mainloop()
     
     def server_start(self):
-        while(1):
+        while True:
             time_manager = TimeManager(self)
             time_manager.time_manager_start()
             if not self.server_on:break
-            screen_server = ScreenServer(6, -20)
+            screen_server = ScreenServer(8, -20)
             screen_server.screen_server_start()
             
     #另开一个线程实现
